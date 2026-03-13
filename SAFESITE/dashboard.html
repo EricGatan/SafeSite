@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeSite — Dashboard</title>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+        <path d="M18 3L33 12V24L18 33L3 24V12L18 3Z" stroke="#f59e0b" stroke-width="2" fill="rgba(245,158,11,0.15)"/>
+        <circle cx="18" cy="17" r="5" fill="#f59e0b"/>
+      </svg>
+      <span class="logo-text">SAFESITE</span>
+    </div>
+    <div class="live-indicator">
+      <span class="live-dot"></span>
+      <span id="liveStatus">OFFLINE</span>
+    </div>
+  </div>
+  <div class="header-center">
+    <span id="clockDisplay" class="clock">--:--:--</span>
+    <span id="dateDisplay" class="date-display"></span>
+  </div>
+  <div class="header-right">
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <span id="userEmailDisplay">—</span>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">⏻ LOGOUT</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: Camera + Settings -->
+  <div class="left-col">
+
+    <!-- Camera Panel -->
+    <div class="card camera-card">
+      <div class="card-header">
+        <div class="card-title">📷 Camera Feed</div>
+        <div class="cam-status inactive" id="camStatusBadge">● OFFLINE</div>
+      </div>
+
+      <div class="cam-controls">
+        <div class="cam-select-wrap">
+          <label>CAMERA SOURCE:</label>
+          <select id="cameraSelect">
+            <option value="">— Select Camera —</option>
+          </select>
+        </div>
+        <div class="cam-btns">
+          <button class="btn-start" id="btnStart" onclick="startCamera()">▶ START</button>
+          <button class="btn-stop" id="btnStop" onclick="stopCamera()" style="display:none">■ STOP</button>
+        </div>
+      </div>
+
+      <div class="video-wrap" id="videoWrap">
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="placeholder-icon">📷</div>
+          <p>SELECT A CAMERA TO BEGIN MONITORING</p>
+        </div>
+        <video id="videoEl" autoplay muted playsinline></video>
+        <canvas id="detectionCanvas"></canvas>
+        <div class="scanline" id="scanline"></div>
+        <div class="det-chips" id="detChips"></div>
+        <div class="rec-badge" id="recBadge" style="display:none">⬤ REC</div>
+      </div>
+    </div>
+
+    <!-- PPE Settings -->
+    <div class="card settings-card">
+      <div class="card-header">
+        <div class="card-title">⚙ PPE Detection Settings</div>
+      </div>
+      <div class="ppe-grid">
+        <div class="ppe-item" onclick="togglePPE('hardhat')">
+          <div class="ppe-icon-wrap">🪖</div>
+          <div class="ppe-label">Hard Hat</div>
+          <div class="ppe-toggle on" id="tog-hardhat"></div>
+        </div>
+        <div class="ppe-item" onclick="togglePPE('vest')">
+          <div class="ppe-icon-wrap">🦺</div>
+          <div class="ppe-label">Safety Vest</div>
+          <div class="ppe-toggle on" id="tog-vest"></div>
+        </div>
+        <div class="ppe-item" onclick="togglePPE('goggles')">
+          <div class="ppe-icon-wrap">🥽</div>
+          <div class="ppe-label">Goggles</div>
+          <div class="ppe-toggle" id="tog-goggles"></div>
+        </div>
+        <div class="ppe-item" onclick="togglePPE('gloves')">
+          <div class="ppe-icon-wrap">🧤</div>
+          <div class="ppe-label">Gloves</div>
+          <div class="ppe-toggle" id="tog-gloves"></div>
+        </div>
+        <div class="ppe-item" onclick="togglePPE('boots')">
+          <div class="ppe-icon-wrap">🥾</div>
+          <div class="ppe-label">Safety Boots</div>
+          <div class="ppe-toggle" id="tog-boots"></div>
+        </div>
+        <div class="ppe-item" onclick="togglePPE('mask')">
+          <div class="ppe-icon-wrap">😷</div>
+          <div class="ppe-label">Face Mask</div>
+          <div class="ppe-toggle" id="tog-mask"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Stats + Log + Report -->
+  <div class="right-col">
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon">👷</div>
+        <div class="stat-body">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-lbl">Total Entered</div>
+        </div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-body">
+          <div class="stat-num" id="statCompliant">0</div>
+          <div class="stat-lbl">PPE Compliant</div>
+        </div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon">⚠</div>
+        <div class="stat-body">
+          <div class="stat-num" id="statViolations">0</div>
+          <div class="stat-lbl">Violations</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance Rate -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Compliance Rate</div>
+        <div class="rate-pct" id="rateLabel">0%</div>
+      </div>
+      <div class="rate-bar-bg">
+        <div class="rate-bar-fill" id="rateBar" style="width:0%"></div>
+      </div>
+      <div class="breakdown-grid">
+        <div class="bk-item pass">
+          <span>🪖 Hard Hat</span><strong id="bkHardhat">0</strong>
+        </div>
+        <div class="bk-item pass">
+          <span>🦺 Vest</span><strong id="bkVest">0</strong>
+        </div>
+        <div class="bk-item fail">
+          <span>❌ No Hard Hat</span><strong id="bkNoHardhat">0</strong>
+        </div>
+        <div class="bk-item fail">
+          <span>❌ No Vest</span><strong id="bkNoVest">0</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detection Log -->
+    <div class="card log-card">
+      <div class="card-header">
+        <div class="card-title">📋 Detection Log</div>
+        <button class="btn-clear" onclick="clearLog()">CLEAR</button>
+      </div>
+      <div class="log-list" id="logList">
+        <div class="log-entry info">
+          <div class="log-time">SYSTEM</div>
+          <div class="log-msg">Waiting for camera feed...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Report -->
+    <div class="card report-card">
+      <div class="card-header">
+        <div class="card-title">📧 Send Report</div>
+      </div>
+      <p class="report-desc">Generate and email today's PPE compliance report.</p>
+      <div class="report-row">
+        <input type="email" id="reportEmail" placeholder="recipient@company.com" />
+        <button class="btn-send" onclick="sendReport()">📤 SEND</button>
+      </div>
+      <div class="send-status" id="sendStatus"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/firebase-init.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeSite — Login</title>
+  <link rel="stylesheet" href="css/login.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Animated particles -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Background overlay -->
+  <div class="bg-overlay"></div>
+
+  <!-- Login Card -->
+  <div class="login-wrapper">
+    <div class="login-card" id="loginCard">
+
+      <!-- Logo -->
+      <div class="logo-block">
+        <div class="logo-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <path d="M18 3L33 12V24L18 33L3 24V12L18 3Z" stroke="#f59e0b" stroke-width="2" fill="rgba(245,158,11,0.15)"/>
+            <path d="M18 8L10 12.5V21.5L18 26L26 21.5V12.5L18 8Z" fill="#f59e0b" opacity="0.6"/>
+            <circle cx="18" cy="17" r="4" fill="#f59e0b"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">SAFESITE</span>
+          <span class="logo-sub">PPE DETECTION SYSTEM</span>
+        </div>
+      </div>
+
+      <!-- Welcome text -->
+      <div class="welcome-block">
+        <h1>Welcome Back</h1>
+        <p>Sign in to access the construction site safety dashboard</p>
+      </div>
+
+      <!-- Form -->
+      <div class="form-block">
+        <div class="input-group">
+          <label>EMAIL ADDRESS</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+            <input type="email" id="loginEmail" placeholder="admin@safesite.com" autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>PASSWORD</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor" width="16"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+            <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" />
+            <button class="eye-btn" onclick="togglePassword()" id="eyeBtn" type="button">
+              <svg id="eyeIcon" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="error-box" id="loginError"></div>
+
+        <button class="btn-signin" id="signinBtn" onclick="doLogin()">
+          <span id="btnText">SIGN IN</span>
+          <div class="btn-loader" id="btnLoader"></div>
+        </button>
+
+        <div class="footer-note">
+          🔒 Authorized Personnel Only &nbsp;|&nbsp; Construction Site Safety
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side info panel -->
+    <div class="info-panel">
+      <div class="info-content">
+        <div class="stat-item">
+          <div class="stat-num" id="liveTime">--:--</div>
+          <div class="stat-lbl">LOCAL TIME</div>
+        </div>
+        <div class="divider"></div>
+        <div class="stat-item">
+          <div class="stat-num">🦺</div>
+          <div class="stat-lbl">PPE MONITORING</div>
+        </div>
+        <div class="divider"></div>
+        <div class="stat-item">
+          <div class="stat-num">📷</div>
+          <div class="stat-lbl">LIVE DETECTION</div>
+        </div>
+      </div>
+      <div class="info-footer">
+        Real-time PPE compliance monitoring for construction site safety
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/firebase-init.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

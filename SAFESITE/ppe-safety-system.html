@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeSite — PPE Detection System</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ============================================================
+  // 🔧 FIREBASE CONFIG — Replace with your own Firebase project
+  // ============================================================
+  const firebaseConfig = {
+  apiKey: "AIzaSyDaqnGh_w4fskz7yZKeff0tk4CRaN2e6tE",
+  authDomain: "safesite-fed46.firebaseapp.com",
+  projectId: "safesite-fed46",
+  storageBucket: "safesite-fed46.firebasestorage.app",
+  messagingSenderId: "153126968568",
+  appId: "1:153126968568:web:fc711fa673621841c82f0d",
+  measurementId: "G-RLY3MC7E3V"
+  };
+  // ============================================================
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window._firebaseAuth = auth;
+  window._firebaseDb = db;
+  window._firebaseFns = { signInWithEmailAndPassword, signOut, onAuthStateChanged, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp };
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      window.showDashboard(user);
+    } else {
+      window.showLogin();
+    }
+  });
+</script>
+
+<style>
+:root {
+  --bg: #070b12;
+  --surface: #0d1520;
+  --surface2: #111d2e;
+  --border: #1a2f4a;
+  --accent: #00d4ff;
+  --accent2: #00ff88;
+  --warn: #ff6b35;
+  --danger: #ff3355;
+  --text: #c8dff0;
+  --text-dim: #4a6b8a;
+  --glow: 0 0 20px rgba(0,212,255,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Exo 2', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== LOGIN PAGE ===== */
+#loginPage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: var(--bg);
+}
+
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 48px 40px;
+  width: 420px;
+  max-width: 95vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.login-logo .icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+.login-logo h1 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: white;
+}
+
+.login-logo span {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: block;
+  letter-spacing: 1px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  text-transform: uppercase;
+}
+
+.form-group input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+}
+
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent), #0099cc);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.btn-login:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,212,255,0.4);
+}
+
+.login-error {
+  background: rgba(255,51,85,0.1);
+  border: 1px solid rgba(255,51,85,0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 16px;
+  display: none;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* ===== DASHBOARD ===== */
+#dashboard {
+  display: none;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.header {
+  background: rgba(13,21,32,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: white;
+}
+
+.header-logo .dot {
+  width: 10px; height: 10px;
+  background: var(--accent2);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-badge {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.btn-logout {
+  background: rgba(255,51,85,0.1);
+  border: 1px solid rgba(255,51,85,0.3);
+  color: var(--danger);
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Exo 2', sans-serif;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover { background: rgba(255,51,85,0.2); }
+
+/* Main layout */
+.main {
+  padding: 28px 32px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Camera feed */
+.camera-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: white;
+  text-transform: uppercase;
+}
+
+.status-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(0,255,136,0.1);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: var(--accent2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-badge.inactive {
+  background: rgba(74,107,138,0.1);
+  border-color: rgba(74,107,138,0.3);
+  color: var(--text-dim);
+}
+
+.status-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.camera-select-bar {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.camera-select-bar label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+select {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-start, .btn-stop {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, var(--accent2), #00cc6a);
+  color: #001a0a;
+}
+
+.btn-start:hover { box-shadow: 0 4px 16px rgba(0,255,136,0.3); }
+
+.btn-stop {
+  background: rgba(255,51,85,0.15);
+  border: 1px solid rgba(255,51,85,0.4);
+  color: var(--danger);
+}
+
+.btn-stop:hover { background: rgba(255,51,85,0.25); }
+
+/* Video container */
+.video-container {
+  position: relative;
+  background: #020509;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+canvas#detectionCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-dim);
+}
+
+.video-placeholder .cam-icon {
+  font-size: 56px;
+  opacity: 0.3;
+}
+
+.video-placeholder p {
+  font-size: 14px;
+  font-family: 'Share Tech Mono', monospace;
+  opacity: 0.5;
+}
+
+/* Detection overlay labels */
+.detection-info {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.det-chip {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+}
+
+.det-chip.ppe { background: rgba(0,255,136,0.2); border: 1px solid rgba(0,255,136,0.4); color: var(--accent2); }
+.det-chip.no-ppe { background: rgba(255,51,85,0.2); border: 1px solid rgba(255,51,85,0.4); color: var(--danger); }
+.det-chip.info { background: rgba(0,212,255,0.2); border: 1px solid rgba(0,212,255,0.4); color: var(--accent); }
+
+/* Stats sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.stat-card-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.big-stat {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.big-stat.green { color: var(--accent2); }
+.big-stat.orange { color: var(--warn); }
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(26,47,74,0.5);
+  font-size: 13px;
+}
+
+.stat-row:last-child { border-bottom: none; }
+
+.stat-row .label { color: var(--text-dim); }
+.stat-row .val { font-family: 'Share Tech Mono', monospace; color: var(--text); }
+.stat-row .val.green { color: var(--accent2); }
+.stat-row .val.red { color: var(--danger); }
+
+/* PPE toggle settings */
+.ppe-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ppe-toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.ppe-toggle-item span {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle {
+  width: 40px; height: 22px;
+  background: var(--border);
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle.on { background: var(--accent2); }
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+}
+
+.toggle.on::after { transform: translateX(18px); }
+
+/* Log entries */
+.log-list {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.log-list::-webkit-scrollbar { width: 4px; }
+.log-list::-webkit-scrollbar-track { background: transparent; }
+.log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-entry {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg);
+  border-left: 3px solid;
+  color: var(--text-dim);
+}
+
+.log-entry.pass { border-color: var(--accent2); }
+.log-entry.fail { border-color: var(--danger); }
+.log-entry.info { border-color: var(--accent); }
+
+.log-entry .time { color: var(--text-dim); font-size: 10px; }
+.log-entry .msg { color: var(--text); margin-top: 2px; }
+
+/* Email report section */
+.report-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  grid-column: 1 / -1;
+}
+
+.email-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.email-row input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.email-row input:focus { border-color: var(--accent); }
+
+.btn-send {
+  padding: 10px 22px;
+  background: linear-gradient(135deg, var(--accent), #0077aa);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-send:hover { box-shadow: 0 4px 16px rgba(0,212,255,0.4); transform: translateY(-1px); }
+
+.send-status {
+  margin-top: 10px;
+  font-size: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  display: none;
+}
+
+.send-status.ok { color: var(--accent2); }
+.send-status.err { color: var(--danger); }
+
+/* Notification toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-family: 'Share Tech Mono', monospace;
+  z-index: 200;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s;
+  max-width: 320px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { border-left: 3px solid var(--accent2); color: var(--accent2); }
+.toast.err { border-left: 3px solid var(--danger); color: var(--danger); }
+
+/* Progress bar */
+.compliance-bar-wrap {
+  margin-top: 10px;
+}
+
+.compliance-bar-bg {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.compliance-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  transition: width 0.5s ease;
+}
+
+/* Scanning animation on video */
+.scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scan 3s linear infinite;
+  display: none;
+}
+
+.scanning .scan-line { display: block; }
+
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .report-section { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">🦺</div>
+      <div>
+        <h1>SAFESITE</h1>
+        <span>PPE DETECTION SYSTEM</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="admin@safesite.com" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">ACCESS SYSTEM</button>
+    <div class="login-error" id="loginError"></div>
+    <p style="margin-top:20px; font-size:11px; color:var(--text-dim); font-family:'Share Tech Mono',monospace; text-align:center; line-height:1.6;">
+      ⚠ AUTHORIZED PERSONNEL ONLY<br>
+      Construction Site Safety Management System
+    </p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="header">
+    <div class="header-logo">
+      <span>🦺 SAFESITE</span>
+      <div class="dot"></div>
+      <span style="font-size:12px; color:var(--text-dim); letter-spacing:1px; font-family:'Share Tech Mono',monospace;">PPE MONITOR</span>
+    </div>
+    <div class="header-right">
+      <div class="user-badge" id="userEmail">—</div>
+      <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Camera Feed Panel -->
+    <div>
+      <div class="camera-panel">
+        <div class="panel-header">
+          <div class="panel-title">📷 Camera Feed</div>
+          <div class="status-badge inactive" id="camStatus">OFFLINE</div>
+        </div>
+        <div class="camera-select-bar">
+          <label>SELECT CAMERA:</label>
+          <select id="cameraSelect">
+            <option value="">-- Choose Camera --</option>
+          </select>
+          <button class="btn-start" id="btnStart" onclick="startCamera()">▶ START</button>
+          <button class="btn-stop" id="btnStop" onclick="stopCamera()" style="display:none">■ STOP</button>
+        </div>
+        <div class="video-container" id="videoContainer">
+          <div class="video-placeholder" id="videoPlaceholder">
+            <div class="cam-icon">📷</div>
+            <p>SELECT A CAMERA TO BEGIN</p>
+          </div>
+          <video id="videoEl" autoplay muted playsinline></video>
+          <canvas id="detectionCanvas"></canvas>
+          <div class="scan-line"></div>
+          <div class="detection-info" id="detectionInfo" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- PPE Settings -->
+      <div class="stat-card" style="margin-top:20px;">
+        <div class="stat-card-title">⚙ PPE Detection Settings</div>
+        <div class="ppe-toggles">
+          <div class="ppe-toggle-item">
+            <span>🪖 Hard Hat Detection</span>
+            <div class="toggle on" id="tog-hardhat" onclick="togglePPE('hardhat')"></div>
+          </div>
+          <div class="ppe-toggle-item">
+            <span>🦺 Safety Vest Detection</span>
+            <div class="toggle on" id="tog-vest" onclick="togglePPE('vest')"></div>
+          </div>
+          <div class="ppe-toggle-item">
+            <span>🥽 Safety Goggles</span>
+            <div class="toggle" id="tog-goggles" onclick="togglePPE('goggles')"></div>
+          </div>
+          <div class="ppe-toggle-item">
+            <span>🧤 Safety Gloves</span>
+            <div class="toggle" id="tog-gloves" onclick="togglePPE('gloves')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Stats -->
+    <div class="sidebar">
+      <!-- Total entered -->
+      <div class="stat-card">
+        <div class="stat-card-title">👷 Workers Entered Today</div>
+        <div class="big-stat" id="statTotal">0</div>
+        <div class="stat-label">Total persons detected</div>
+      </div>
+
+      <!-- PPE Compliant -->
+      <div class="stat-card">
+        <div class="stat-card-title">✅ PPE Compliant</div>
+        <div class="big-stat green" id="statCompliant">0</div>
+        <div class="compliance-bar-wrap">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;">
+            <span>COMPLIANCE RATE</span>
+            <span id="compRate">0%</span>
+          </div>
+          <div class="compliance-bar-bg">
+            <div class="compliance-bar-fill" id="compBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No PPE -->
+      <div class="stat-card">
+        <div class="stat-card-title">⚠ No PPE / Violation</div>
+        <div class="big-stat orange" id="statViolations">0</div>
+        <div class="stat-label">Workers without required PPE</div>
+      </div>
+
+      <!-- Live stats breakdown -->
+      <div class="stat-card">
+        <div class="stat-card-title">📊 Live Breakdown</div>
+        <div class="stat-row">
+          <span class="label">🪖 With Hard Hat</span>
+          <span class="val green" id="statHardhat">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">🦺 With Vest</span>
+          <span class="val green" id="statVest">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">❌ No Hard Hat</span>
+          <span class="val red" id="statNoHardhat">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">❌ No Vest</span>
+          <span class="val red" id="statNoVest">0</span>
+        </div>
+      </div>
+
+      <!-- Activity log -->
+      <div class="stat-card">
+        <div class="stat-card-title">📋 Detection Log</div>
+        <div class="log-list" id="logList">
+          <div class="log-entry info">
+            <div class="time">SYSTEM</div>
+            <div class="msg">Waiting for camera feed...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Report -->
+    <div class="report-section">
+      <div class="panel-title" style="margin-bottom:4px;">📧 Send Report</div>
+      <p style="font-size:13px; color:var(--text-dim); margin-top:6px;">Generate and send the daily PPE compliance report to any email address.</p>
+      <div class="email-row">
+        <input type="email" id="reportEmail" placeholder="Enter recipient email (e.g. safety@company.com)" />
+        <button class="btn-send" onclick="sendReport()">📤 SEND REPORT</button>
+      </div>
+      <div class="send-status" id="sendStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let stream = null;
+let detectionInterval = null;
+let cameraActive = false;
+
+const ppeSettings = { hardhat: true, vest: true, goggles: false, gloves: false };
+
+const stats = {
+  total: 0,
+  compliant: 0,
+  violations: 0,
+  hardhat: 0,
+  vest: 0,
+  noHardhat: 0,
+  noVest: 0
+};
+
+const detectionLog = [];
+
+// ============================================================
+// AUTH
+// ============================================================
+window.showLogin = function() {
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+};
+
+window.showDashboard = function(user) {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('userEmail').textContent = user.email;
+  loadCameras();
+};
+
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+
+  if (!email || !pass) {
+    errEl.textContent = '⚠ Please enter email and password.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const { signInWithEmailAndPassword } = window._firebaseFns;
+    await signInWithEmailAndPassword(window._firebaseAuth, email, pass);
+  } catch (err) {
+    errEl.textContent = '❌ ' + (err.code === 'auth/invalid-credential' ? 'Invalid email or password.' : err.message);
+    errEl.style.display = 'block';
+  }
+};
+
+window.doLogout = async function() {
+  stopCamera();
+  const { signOut } = window._firebaseFns;
+  await signOut(window._firebaseAuth);
+};
+
+// Allow Enter key on login
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('loginPage').style.display !== 'none') {
+    doLogin();
+  }
+});
+
+// ============================================================
+// CAMERA
+// ============================================================
+async function loadCameras() {
+  try {
+    // Request permission first
+    await navigator.mediaDevices.getUserMedia({ video: true }).then(s => s.getTracks().forEach(t => t.stop()));
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter(d => d.kind === 'videoinput');
+    const sel = document.getElementById('cameraSelect');
+    sel.innerHTML = '<option value="">-- Choose Camera --</option>';
+    cameras.forEach((cam, i) => {
+      const opt = document.createElement('option');
+      opt.value = cam.deviceId;
+      opt.textContent = cam.label || `Camera ${i + 1}`;
+      sel.appendChild(opt);
+    });
+    if (cameras.length === 1) sel.value = cameras[0].deviceId;
+    addLog('info', `Found ${cameras.length} camera(s)`);
+  } catch (err) {
+    addLog('fail', 'Camera permission denied');
+    showToast('Camera permission required', 'err');
+  }
+}
+
+window.startCamera = async function() {
+  const deviceId = document.getElementById('cameraSelect').value;
+  if (!deviceId) { showToast('Please select a camera first', 'err'); return; }
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    await video.play();
+
+    document.getElementById('videoPlaceholder').style.display = 'none';
+    document.getElementById('detectionInfo').style.display = 'flex';
+    document.getElementById('camStatus').textContent = 'LIVE';
+    document.getElementById('camStatus').classList.remove('inactive');
+    document.getElementById('videoContainer').classList.add('scanning');
+    document.getElementById('btnStart').style.display = 'none';
+    document.getElementById('btnStop').style.display = 'block';
+
+    cameraActive = true;
+    startDetection();
+    addLog('info', 'Camera started — Detection active');
+    showToast('Camera started! PPE detection running.', 'ok');
+  } catch (err) {
+    showToast('Could not start camera: ' + err.message, 'err');
+  }
+};
+
+window.stopCamera = function() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  if (detectionInterval) { clearInterval(detectionInterval); detectionInterval = null; }
+
+  const video = document.getElementById('videoEl');
+  video.srcObject = null;
+
+  document.getElementById('videoPlaceholder').style.display = 'flex';
+  document.getElementById('detectionInfo').style.display = 'none';
+  document.getElementById('camStatus').textContent = 'OFFLINE';
+  document.getElementById('camStatus').classList.add('inactive');
+  document.getElementById('videoContainer').classList.remove('scanning');
+  document.getElementById('btnStart').style.display = 'block';
+  document.getElementById('btnStop').style.display = 'none';
+  cameraActive = false;
+
+  const canvas = document.getElementById('detectionCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  addLog('info', 'Camera stopped');
+};
+
+// ============================================================
+// PPE DETECTION (Simulated — replace with your ML model)
+// ============================================================
+
+// -----------------------------------------------------------
+// 🔧 INTEGRATE YOUR PPE MODEL HERE
+// Replace the simulateDetection() function with your actual
+// model inference. The function should return an array of:
+// { x, y, w, h, hasHardhat, hasVest, confidence }
+// where x,y,w,h are in canvas pixel coords (0..canvas.width)
+// -----------------------------------------------------------
+
+function simulateDetection(canvas) {
+  const numPersons = Math.floor(Math.random() * 3) + 1;
+  const detections = [];
+  for (let i = 0; i < numPersons; i++) {
+    const w = canvas.width * (0.12 + Math.random() * 0.1);
+    const h = w * 2.2;
+    const x = Math.random() * (canvas.width - w);
+    const y = Math.random() * (canvas.height - h);
+    detections.push({
+      x, y, w, h,
+      hasHardhat: ppeSettings.hardhat ? Math.random() > 0.3 : true,
+      hasVest: ppeSettings.vest ? Math.random() > 0.25 : true,
+      confidence: 0.7 + Math.random() * 0.28
+    });
+  }
+  return detections;
+}
+
+function drawDetections(canvas, detections) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  detections.forEach(d => {
+    const compliant = d.hasHardhat && d.hasVest;
+    const color = compliant ? '#00ff88' : '#ff3355';
+
+    // Bounding box
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.strokeRect(d.x, d.y, d.w, d.h);
+    ctx.shadowBlur = 0;
+
+    // Corner accents
+    const cs = 14;
+    ctx.lineWidth = 3;
+    [[d.x, d.y], [d.x+d.w, d.y], [d.x, d.y+d.h], [d.x+d.w, d.y+d.h]].forEach(([cx, cy], idx) => {
+      ctx.beginPath();
+      const sx = idx % 2 === 0 ? 1 : -1;
+      const sy = idx < 2 ? 1 : -1;
+      ctx.moveTo(cx, cy + sy * cs);
+      ctx.lineTo(cx, cy);
+      ctx.lineTo(cx + sx * cs, cy);
+      ctx.stroke();
+    });
+
+    // Label background
+    const label = `${compliant ? '✓' : '✗'} ${(d.confidence*100).toFixed(0)}%`;
+    ctx.font = 'bold 12px Share Tech Mono, monospace';
+    const tw = ctx.measureText(label).width + 14;
+    ctx.fillStyle = color + 'cc';
+    ctx.fillRect(d.x, d.y - 22, tw, 20);
+    ctx.fillStyle = compliant ? '#001a0a' : '#1a0005';
+    ctx.fillText(label, d.x + 7, d.y - 6);
+
+    // PPE icons near head
+    const icons = [];
+    if (d.hasHardhat) icons.push('🪖');
+    if (d.hasVest) icons.push('🦺');
+    if (!d.hasHardhat && ppeSettings.hardhat) icons.push('❌H');
+    if (!d.hasVest && ppeSettings.vest) icons.push('❌V');
+
+    ctx.font = '13px serif';
+    icons.forEach((ic, i) => {
+      ctx.fillText(ic, d.x + d.w + 4, d.y + 16 + i * 18);
+    });
+  });
+}
+
+function startDetection() {
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('detectionCanvas');
+
+  detectionInterval = setInterval(() => {
+    if (!cameraActive) return;
+
+    // Size canvas to video
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 360;
+
+    const detections = simulateDetection(canvas);
+    drawDetections(canvas, detections);
+
+    // Update stats
+    detections.forEach(d => {
+      stats.total++;
+      const compliant = d.hasHardhat && d.hasVest;
+      if (compliant) stats.compliant++;
+      else stats.violations++;
+      if (d.hasHardhat) stats.hardhat++;
+      if (d.hasVest) stats.vest++;
+      if (!d.hasHardhat && ppeSettings.hardhat) stats.noHardhat++;
+      if (!d.hasVest && ppeSettings.vest) stats.noVest++;
+    });
+
+    updateStatsUI();
+
+    // Log significant events
+    const violators = detections.filter(d => !d.hasHardhat || !d.hasVest);
+    if (violators.length > 0) {
+      const missing = [];
+      if (violators.some(v => !v.hasHardhat)) missing.push('Hard Hat');
+      if (violators.some(v => !v.hasVest)) missing.push('Safety Vest');
+      addLog('fail', `${violators.length} person(s) missing: ${missing.join(', ')}`);
+      saveIncidentToFirebase(violators.length, missing.join(', '));
+    } else {
+      addLog('pass', `${detections.length} person(s) — All PPE compliant ✓`);
+    }
+
+    // Update detection chips
+    const info = document.getElementById('detectionInfo');
+    info.innerHTML = `
+      <div class="det-chip info">👁 ${detections.length} PERSON${detections.length !== 1 ? 'S' : ''} DETECTED</div>
+      <div class="det-chip ppe">✓ ${detections.filter(d=>d.hasHardhat&&d.hasVest).length} COMPLIANT</div>
+      ${violators.length > 0 ? `<div class="det-chip no-ppe">⚠ ${violators.length} VIOLATION${violators.length !== 1 ? 'S' : ''}</div>` : ''}
+    `;
+  }, 2000); // Check every 2 seconds
+}
+
+function updateStatsUI() {
+  document.getElementById('statTotal').textContent = stats.total;
+  document.getElementById('statCompliant').textContent = stats.compliant;
+  document.getElementById('statViolations').textContent = stats.violations;
+  document.getElementById('statHardhat').textContent = stats.hardhat;
+  document.getElementById('statVest').textContent = stats.vest;
+  document.getElementById('statNoHardhat').textContent = stats.noHardhat;
+  document.getElementById('statNoVest').textContent = stats.noVest;
+
+  const rate = stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0;
+  document.getElementById('compRate').textContent = rate + '%';
+  document.getElementById('compBar').style.width = rate + '%';
+}
+
+// ============================================================
+// PPE TOGGLE
+// ============================================================
+window.togglePPE = function(type) {
+  ppeSettings[type] = !ppeSettings[type];
+  const el = document.getElementById('tog-' + type);
+  el.classList.toggle('on', ppeSettings[type]);
+  addLog('info', `${type} detection ${ppeSettings[type] ? 'enabled' : 'disabled'}`);
+};
+
+// ============================================================
+// LOG
+// ============================================================
+function addLog(type, msg) {
+  const time = new Date().toLocaleTimeString('en-PH', { hour12: false });
+  detectionLog.unshift({ type, msg, time });
+  if (detectionLog.length > 100) detectionLog.pop();
+
+  const list = document.getElementById('logList');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<div class="time">${time}</div><div class="msg">${msg}</div>`;
+  list.insertBefore(entry, list.firstChild);
+
+  // Keep max 20 visible
+  while (list.children.length > 20) list.removeChild(list.lastChild);
+}
+
+// ============================================================
+// FIREBASE SAVE INCIDENT
+// ============================================================
+async function saveIncidentToFirebase(count, missingPPE) {
+  try {
+    const { collection, addDoc, serverTimestamp } = window._firebaseFns;
+    await addDoc(collection(window._firebaseDb, 'incidents'), {
+      timestamp: serverTimestamp(),
+      violations: count,
+      missingPPE,
+      user: window._firebaseAuth.currentUser?.email
+    });
+  } catch (e) {
+    // Silently fail if Firebase not configured
+  }
+}
+
+// ============================================================
+// SEND EMAIL REPORT via EmailJS (or mailto fallback)
+// ============================================================
+window.sendReport = function() {
+  const email = document.getElementById('reportEmail').value.trim();
+  const statusEl = document.getElementById('sendStatus');
+
+  if (!email || !email.includes('@')) {
+    statusEl.textContent = '⚠ Please enter a valid email address.';
+    statusEl.className = 'send-status err';
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  const rate = stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0;
+  const now = new Date().toLocaleString('en-PH');
+
+  const subject = encodeURIComponent(`[SafeSite] PPE Compliance Report — ${new Date().toLocaleDateString('en-PH')}`);
+  const body = encodeURIComponent(
+`SafeSite PPE Detection Report
+Generated: ${now}
+Operator: ${window._firebaseAuth.currentUser?.email || 'N/A'}
+
+=== SUMMARY ===
+Total Workers Entered: ${stats.total}
+PPE Compliant: ${stats.compliant}
+Violations: ${stats.violations}
+Compliance Rate: ${rate}%
+
+=== BREAKDOWN ===
+Workers with Hard Hat: ${stats.hardhat}
+Workers with Safety Vest: ${stats.vest}
+Workers WITHOUT Hard Hat: ${stats.noHardhat}
+Workers WITHOUT Safety Vest: ${stats.noVest}
+
+=== RECENT LOG (last 10 entries) ===
+${detectionLog.slice(0,10).map(l => `[${l.time}] ${l.msg}`).join('\n')}
+
+---
+Sent from SafeSite PPE Detection System
+`);
+
+  // Opens mail client — replace with EmailJS/SendGrid for server-side sending
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+
+  statusEl.textContent = '✅ Email client opened! Send the pre-filled report.';
+  statusEl.className = 'send-status ok';
+  statusEl.style.display = 'block';
+
+  showToast('Report ready to send to ' + email, 'ok');
+
+  // Save report to Firebase
+  try {
+    const { collection, addDoc, serverTimestamp } = window._firebaseFns;
+    addDoc(collection(window._firebaseDb, 'reports'), {
+      timestamp: serverTimestamp(),
+      sentTo: email,
+      totalWorkers: stats.total,
+      compliant: stats.compliant,
+      violations: stats.violations,
+      complianceRate: rate,
+      sentBy: window._firebaseAuth.currentUser?.email
+    });
+  } catch(e) {}
+};
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
